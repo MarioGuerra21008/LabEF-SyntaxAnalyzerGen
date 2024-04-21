@@ -14,17 +14,6 @@ import scanFrame as scan
 import Scanner as scanner
 import sys
 
-#Declaración de archivos Yalex proporcionados para el laboratorio.
-yalexArchive1 = "yalex/slr-1.yal"
-yalexArchive2 = "yalex/slr-2.yal"
-yalexArchive3 = "yalex/slr-3.yal"
-yalexArchive4 = "yalex/slr-4.yal"
-
-yaparArchive1 = "yapar/slr-1.yalp"
-yaparArchive2 = "yapar/slr-2.yalp"
-yaparArchive3 = "yapar/slr-3.yalp"
-yaparArchive4 = "yapar/slr-4.yalp"
-
 #Algoritmo Shunting Yard para pasar una expresión infix a postfix.
 
 def insert_concatenation(expression): #Función insert_concatenation para poder agregar los operadores al arreglo result.
@@ -183,9 +172,11 @@ def leer_archivo_yalex():
             regexIdentifiers.append(identifier)
 
     #print("Esto es regexIdentifiers:", regexIdentifiers)
+
+    print(yalexFunctions)
     
     for function in yalexFunctions:
-        variable, definition = function.split("=")
+        variable, definition = function.split("=", 1)
         variable = variable.strip()
         definition = definition.strip()
         # Verifica si la definición de la variable está vacía
@@ -820,17 +811,17 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                                 # Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
                                 next_states |= epsilon_closure(dfaDirect, {successor})
                                 pertenece_linea = True  # La línea contiene al menos un símbolo válido
-                                print("Estado actual: ", state)
-                                print("Posibles caminos: ", dfaDirect[state])
+                                #print("Estado actual: ", state)
+                                #print("Posibles caminos: ", dfaDirect[state])
                                 
-                                if element == "\n" or element == "\t" or element == " ":
-                                    print("Lee símbolo: ", ord(element))
-                                else:
-                                    print("Lee símbolo: ", element)
+                                #if element == "\n" or element == "\t" or element == " ":
+                                    #print("Lee símbolo: ", ord(element))
+                                #else:
+                                    #print("Lee símbolo: ", element)
                 
                 current_states = next_states
             
-            print("\nInicia siguiente simulación:\n")
+            #print("\nInicia siguiente simulación:\n")
             
             # Verificar si el último estado después de procesar toda la línea pertenece a un estado de aceptación
             if pertenece_linea and any(state in dfaDirect.graph['accept'] for state in current_states):
@@ -844,7 +835,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                 if line[0].isdigit():  # Si el primer elemento es un dígito
                     number_token_index = None
                     for token_index, (token, elements) in enumerate(tokenSymbolList):
-                        if "number" in token:
+                        if "NUMBER" in token:
                             number_token_index = token_index
                             break
                     if number_token_index is not None:
@@ -862,7 +853,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                                 inputScanner[1].append(element)
                 elif len(line) == 2:  # Si la línea tiene solo un elemento
                     for token, elements in tokenSymbolList:
-                        if line[0] == token:
+                        if token != 'NUMBER' and (line[0] == token or line[0] in elements):
                             inputScanner[0].append(token)  # Añadir token correspondiente
                             inputScanner[1].append(line[0])  # Añadir elemento a inputScanner[1]
                     for token, elements in tokenSymbolList:
@@ -900,7 +891,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                     elif element.isdigit():
                         number_token_index = None
                         for token_index, (token, elements) in enumerate(tokenSymbolList):
-                            if "number" in token:
+                            if "NUMBER" in token:
                                 number_token_index = token_index
                                 break
                         if number_token_index is not None:
@@ -917,20 +908,20 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             inputScanner[1].append("")
 
         # Imprimir las líneas que pertenecen a la expresión regular
-        if pertenece:
-            print("Las siguientes líneas pertenecen a la expresión regular definida:\n")
-            for line in pertenece:
-                print(line)
-        else:
-            print("No se encontraron líneas que pertenezcan a la expresión regular definida.\n")
+        #if pertenece:
+        #    print("Las siguientes líneas pertenecen a la expresión regular definida:\n")
+        #    for line in pertenece:
+        #        print(line)
+        #else:
+        #    print("No se encontraron líneas que pertenezcan a la expresión regular definida.\n")
         
         # Imprimir las líneas que no pertenecen a la expresión regular
-        if no_pertenece:
-            print("\nLas siguientes líneas no pertenecen a la expresión regular definida:\n")
-            for line in no_pertenece:
-                print(line)
-        else:
-            print("Todas las líneas pertenecen a la expresión regular definida.\n")
+        #if no_pertenece:
+        #    print("\nLas siguientes líneas no pertenecen a la expresión regular definida:\n")
+        #    for line in no_pertenece:
+        #        print(line)
+        #else:
+        #    print("Todas las líneas pertenecen a la expresión regular definida.\n")
         
         current_token = None
         current_line = []
@@ -998,6 +989,17 @@ def remove_unreachable_states(dfa):
     # Remover estados no alcanzables
     dfa.remove_nodes_from(unreachable_states)
 
+#Declaración de archivos Yalex proporcionados para el laboratorio.
+yalexArchive1 = "yalex/slr-1.yal"
+yalexArchive2 = "yalex/slr-2.yal"
+yalexArchive3 = "yalex/slr-3.yal"
+yalexArchive4 = "yalex/slr-4.yal"
+
+yaparArchive1 = "yapar/slr-1.yalp"
+yaparArchive2 = "yapar/slr-2.yalp"
+yaparArchive3 = "yapar/slr-3.yalp"
+yaparArchive4 = "yapar/slr-4.yalp"
+
 if __name__ == "__main__":
     try:
         regexList, regexIdentifiers, regexTokens = leer_archivo_yalex()
@@ -1064,7 +1066,7 @@ if __name__ == "__main__":
         
         syntax_tree, nodes_calculated, leaf_calculated = build_syntax_tree(regex)
         print("Árbol Sintáctico:")
-        visualize_tree(syntax_tree)
+        #visualize_tree(syntax_tree)
 
         root = encontrar_nodo_posicion_mas_grande(syntax_tree)
 
@@ -1112,14 +1114,14 @@ if __name__ == "__main__":
                 estados_aceptacion.add(nodo)
 
         # Visualiza el AFD
-        plt.figure(figsize=(10, 10))
-        pos = nx.spring_layout(afdDirect)
-        labels = {edge: label for edge, label in nx.get_edge_attributes(afdDirect, 'label').items()}
-        nx.draw(afdDirect, pos, with_labels=True, node_size=200, node_color='blue')
-        nx.draw_networkx_edge_labels(afdDirect, pos, edge_labels=labels)
-        plt.title("Direct AFD Visualization")
-        plt.axis("off")
-        plt.show()
+        #plt.figure(figsize=(10, 10))
+        #pos = nx.spring_layout(afdDirect)
+        #labels = {edge: label for edge, label in nx.get_edge_attributes(afdDirect, 'label').items()}
+        #nx.draw(afdDirect, pos, with_labels=True, node_size=200, node_color='blue')
+        #nx.draw_networkx_edge_labels(afdDirect, pos, edge_labels=labels)
+        #plt.title("Direct AFD Visualization")
+        #plt.axis("off")
+        #plt.show()
 
         # Nombre del archivo de salida
         nombre_archivo = "AFD.txt"
@@ -1150,6 +1152,10 @@ if __name__ == "__main__":
             scanner.outputScanner(inputScanner)
         except Exception as e:
             print(f"Se ha producido un error: {e}")
+
+        print("Los tokens de este yalex son: ", regexIdentifiers)
+
+
 
     except Exception as e:
         print("Error: ", str(e))

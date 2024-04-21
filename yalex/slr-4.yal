@@ -3,27 +3,37 @@
 (* Introducir cualquier header aqui *)
 
 let delim = [' ''\t''\n']
-let ws = delim+
+let WS = delim+
 let letter = ['A'-'Z''a'-'z']
 let str = (_)*
 let digit = ['0'-'9']
 let digits = digit+
-let id = letter(letter|str|digit)*
-let number = digits(.digits)?('E'['+''-']?digits)?
+let ID = letter(letter|str|digit)*
+let NUMBER = digits(.digits)?('E'['+''-']?digits)?
+let PLUS = ['+']
+let TIMES = ['*']
+let LPAREN = ['(']
+let RPAREN = [')']
+let MINUS = ['-']
+let DIV = ['/']
+let SEMICOLON = [';']
+let ASSIGNOP = [':''=']
+let LT = ['<']
+let EQ = ['=']
 
 rule tokens = 
-    ws
-  | id        { return ID }               (* Cambie por una acción válida, que devuelva el token *)
-  | number    { return NUMBER }
-  | ';'       { return SEMICOLON }
-  | ":="      { return ASSIGNOP }
-  | '<'       { return LT }
-  | '='       { return EQ }
-  | '+'       { return PLUS }
-  | '-'       { return MINUS }
-  | '*'       { return TIMES }
-  | '/'       { return DIV }
-  | '('       { return LPAREN }
-  | ')'       { return RPAREN }
+    WS
+  | ID        { return ID }               (* Cambie por una acción válida, que devuelva el token *)
+  | NUMBER    { return NUMBER }
+  | SEMICOLON       { return SEMICOLON }
+  | ASSIGNOP      { return ASSIGNOP }
+  | LT       { return LT }
+  | EQ       { return EQ }
+  | PLUS       { return PLUS }
+  | MINUS       { return MINUS }
+  | TIMES       { return TIMES }
+  | DIV       { return DIV }
+  | LPAREN       { return LPAREN }
+  | RPAREN       { return RPAREN }
 
 (* Introducir cualquier trailer aqui *)

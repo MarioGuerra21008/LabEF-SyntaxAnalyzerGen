@@ -1,24 +1,32 @@
 (* Lexer para Gramática No. 2 - Expresiones aritméticas extendidas *)
 
+(* Lexer para Gramática No. 2 - Expresiones aritméticas extendidas *)
+
 (* Introducir cualquier header aqui *)
 
 let delim = ["\s\t\n"]
-let ws = delim+
+let WS = delim+
 let letter = ['A'-'Z''a'-'z']
 let digit = ['0'-'9']
 let digits = digit+
-let id = letter(letter|digit)*
-let number = digits(.digits)?('E'['+''-']?digits)?
+let ID = letter(letter|digit)*
+let NUMBER = digits(.digits)?('E'['+''-']?digits)?
+let PLUS = ['+']
+let TIMES = ['*']
+let LPAREN = ['(']
+let RPAREN = [')']
+let MINUS = ['-']
+let DIV = ['/']
 
 rule tokens = 
-    ws        { return WHITESPACE }               (* Cambie por una acción válida, que devuelva el token *)
-  | id        { return ID }
-  | number    { return NUMBER }
-  | '+'       { return PLUS }
-  | '-'       { return MINUS }
-  | '*'       { return TIMES }
-  | '/'       { return DIV }
-  | '('       { return LPAREN }
-  | ')'       { return RPAREN }
+    WS        { return WHITESPACE }               (* Cambie por una acción válida, que devuelva el token *)
+  | ID        { return ID }
+  | NUMBER    { return NUMBER }
+  | PLUS       { return PLUS }
+  | MINUS       { return MINUS }
+  | TIMES       { return TIMES }
+  | DIV       { return DIV }
+  | LPAREN       { return LPAREN }
+  | RPAREN       { return RPAREN }
 
 (* Introducir cualquier trailer aqui *)

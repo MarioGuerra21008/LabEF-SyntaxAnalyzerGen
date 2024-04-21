@@ -1,64 +1,64 @@
 from Definitions import *
 
 def scan(tokenYal):
-    if tokenYal == 'ws':
+    if tokenYal == 'WS':
         return tokenYal
-    if tokenYal == 'id':
+    if tokenYal == 'ID':
         try:
            return ID
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == 'number':
+    if tokenYal == 'NUMBER':
         try:
            return NUMBER
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == ';':
+    if tokenYal == 'SEMICOLON':
         try:
            return SEMICOLON
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == ':=':
+    if tokenYal == 'ASSIGNOP':
         try:
            return ASSIGNOP
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '<':
+    if tokenYal == 'LT':
         try:
            return LT
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '=':
+    if tokenYal == 'EQ':
         try:
            return EQ
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '+':
+    if tokenYal == 'PLUS':
         try:
            return PLUS
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '-':
+    if tokenYal == 'MINUS':
         try:
            return MINUS
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '*':
+    if tokenYal == 'TIMES':
         try:
            return TIMES
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '/':
+    if tokenYal == 'DIV':
         try:
            return DIV
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '(':
+    if tokenYal == 'LPAREN':
         try:
            return LPAREN
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == ')':
+    if tokenYal == 'RPAREN':
         try:
            return RPAREN
         except NameError:
