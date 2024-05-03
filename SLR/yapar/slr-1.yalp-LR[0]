@@ -15,11 +15,11 @@ digraph {
 [term, [term, TIMES, factor, .]]
 " fontsize=14 shape=rectangle]
 	2 [label="I2
-[term, [factor, .]]
-" fontsize=14 shape=rectangle]
-	3 [label="I3
 [expression, [expression, PLUS, term, .]]
 [expression, [expression, .]]
+" fontsize=14 shape=rectangle]
+	3 [label="I3
+[term, [factor, .]]
 " fontsize=14 shape=rectangle]
 	4 [label="I4
 [expression, [expression, PLUS, term, .]]
@@ -45,25 +45,25 @@ digraph {
 [term, [factor, .]]
 " fontsize=14 shape=rectangle]
 	8 [label="I8
-[factor, [LPAREN, expression, RPAREN, .]]
+[expression, [expression, PLUS, term, .]]
 " fontsize=14 shape=rectangle]
 	9 [label="I9
-[expression, [expression, PLUS, term, .]]
+[factor, [LPAREN, expression, RPAREN, .]]
 " fontsize=14 shape=rectangle]
 	10 [label="I10
 [term, [term, TIMES, factor, .]]
 " fontsize=14 shape=rectangle]
 	accept [label=accept fontsize=14 shape=rectangle]
 	0 -> 1 [label="['term', ['term', 'TIMES', 'factor', '.']]" fontsize=14]
-	0 -> 2 [label="['term', ['factor', '.']]" fontsize=14]
-	0 -> 3 [label="[\"expression'\", ['expression', '.']]" fontsize=14]
+	0 -> 2 [label="[\"expression'\", ['expression', '.']]" fontsize=14]
+	0 -> 3 [label="['term', ['factor', '.']]" fontsize=14]
 	0 -> 4 [label="['expression', ['term', '.']]" fontsize=14]
 	0 -> 5 [label="['factor', ['ID', '.']]" fontsize=14]
 	1 -> 6 [label="['expression', ['term', '.']]" fontsize=14]
-	3 -> 7 [label="['expression', ['term', '.']]" fontsize=14]
-	3 -> accept [label="$" fontsize=14]
-	4 -> 8 [label="['factor', ['LPAREN', 'expression', 'RPAREN', '.']]" fontsize=14]
-	4 -> 9 [label="['expression', ['expression', 'PLUS', 'term', '.']]" fontsize=14]
+	2 -> 7 [label="['expression', ['term', '.']]" fontsize=14]
+	2 -> accept [label="$" fontsize=14]
+	4 -> 8 [label="['expression', ['expression', 'PLUS', 'term', '.']]" fontsize=14]
+	4 -> 9 [label="['factor', ['LPAREN', 'expression', 'RPAREN', '.']]" fontsize=14]
+	6 -> 9 [label="['factor', ['LPAREN', 'expression', 'RPAREN', '.']]" fontsize=14]
 	6 -> 10 [label="['term', ['term', 'TIMES', 'factor', '.']]" fontsize=14]
-	6 -> 8 [label="['factor', ['LPAREN', 'expression', 'RPAREN', '.']]" fontsize=14]
 }
