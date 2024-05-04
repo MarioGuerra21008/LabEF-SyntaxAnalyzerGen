@@ -458,6 +458,9 @@ class YAParAttributes(object):
         # Eliminar los elementos de yaparTokens que no están en yalexTokens
         self.yaparTokens = [token for token in self.yaparTokens if token in self.yalexTokens]
 
+        if len(self.yaparProductions) == 0:
+            raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
+
         if len(self.yaparTokens) == 0:
             raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
 
@@ -1358,7 +1361,7 @@ if __name__ == "__main__":
         yapar.leer_archivo_yapar()
         yapar.yapar_subset_construction()
         yapar.print_properties()
-        #yapar.build_graphviz_graph(yaparArchive1)
+        yapar.build_graphviz_graph(yaparArchive1)
 
     except Exception as e:
         print("Error: ", str(e))
