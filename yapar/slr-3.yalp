@@ -3,6 +3,7 @@
 /* E → T + E | T */
 /* T → number * T | number | ( E ) */
 
+%token WS
 %token NUMBER
 %token PLUS
 %token TIMES

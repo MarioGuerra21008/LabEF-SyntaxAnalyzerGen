@@ -4,12 +4,13 @@
 /* T → T ∗ F | T / F | F */
 /* F → ( E ) | id | number */
 
+%token WS
 %token ID
+%token NUMBER
 %token PLUS
 %token MINUS
 %token TIMES
 %token DIV
-%token NUMBER
 %token LPAREN RPAREN
 
 %%

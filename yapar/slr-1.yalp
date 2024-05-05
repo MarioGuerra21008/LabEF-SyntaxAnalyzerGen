@@ -4,6 +4,7 @@
 /* T → T ∗ F | F */
 /* F → ( E ) | id */
 
+%token WS
 %token ID
 %token PLUS
 %token TIMES

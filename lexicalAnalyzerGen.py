@@ -11,6 +11,7 @@ from collections import deque
 from collections import defaultdict
 import graphviz
 from lexicalAnalyzer import *
+import copy
 import scanFrame as scan
 import Scanner as scanner
 import sys
@@ -102,7 +103,7 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     return output_queue
 
 def leer_archivo_yalex():
-    with open(yalexArchive1, "r") as yalexArchive:
+    with open(yalexArchive4, "r") as yalexArchive:
         content = yalexArchive.read()
         if not content:
             raise ValueError("El archivo .yal está vacío.")
@@ -411,7 +412,7 @@ class YAParAttributes(object):
 
     def leer_archivo_yapar(self):
         # Método para leer un archivo .yalp y extraer tokens y producciones
-        with open(yaparArchive1, "r") as yaparArchive:
+        with open(yaparArchive4, "r") as yaparArchive:
             content = yaparArchive.readlines()
             if not content:
                 raise ValueError("El archivo .yalp está vacío.")
@@ -455,17 +456,19 @@ class YAParAttributes(object):
         # Limpiar producciones con production_name None o reglas vacías o reglas ''
         self.yaparProductions = [[production_name, rules] for production_name, *rules in self.yaparProductions if production_name is not None and rules]
 
-        # Eliminar los elementos de yaparTokens que no están en yalexTokens
-        self.yaparTokens = [token for token in self.yaparTokens if token in self.yalexTokens]
+        # Imprimir tokens y producciones
+        print("Estos son los tokens del yalp: ", self.yaparTokens)
+
+        # Verificar si las listas son diferentes después de la eliminación
+        if self.yalexTokens != self.yaparTokens:
+            raise ValueError("Las listas de tokens no coinciden.")
 
         if len(self.yaparProductions) == 0:
             raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
 
         if len(self.yaparTokens) == 0:
             raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
-
-        # Imprimir tokens y producciones
-        print("Estos son los tokens del yalp: ", self.yaparTokens)
+        
         print("Producciones:")
         for production in self.yaparProductions:
             print(production)
@@ -475,7 +478,7 @@ class YAParAttributes(object):
         initial_state_name = self.yaparProductions[0][0]
         self.yaparProductions.insert(0, [initial_state_name + "'", [initial_state_name]])
         
-        self.yaparSubproductions = self.yaparProductions
+        self.yaparSubproductions = copy.deepcopy(self.yaparProductions)
 
         for production in self.yaparProductions:
             production[1].insert(0, ".")
@@ -500,7 +503,7 @@ class YAParAttributes(object):
 
     def closure(self, yaparProductions, item=None, i=None):
         # Método para realizar la operación de cierre (closure)
-        closureProductions = yaparProductions
+        closureProductions = yaparProductions.copy()
 
         while True:
             prodLength = len(closureProductions)
@@ -531,7 +534,7 @@ class YAParAttributes(object):
         items = list(set(x[1][x[1].index(".") + 1] for x in yaparSubsets2 if x[1].index(".") + 1 < len(x[1])))
 
         for item in items:
-            tempItems = [y for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
+            tempItems = [copy.deepcopy(y) for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
 
             for item2 in tempItems:
                 dot = item2[1].index(".")
@@ -1361,7 +1364,7 @@ if __name__ == "__main__":
         yapar.leer_archivo_yapar()
         yapar.yapar_subset_construction()
         yapar.print_properties()
-        yapar.build_graphviz_graph(yaparArchive1)
+        yapar.build_graphviz_graph(yaparArchive4)
 
     except Exception as e:
         print("Error: ", str(e))
