@@ -12,9 +12,11 @@ from collections import defaultdict
 import graphviz
 from lexicalAnalyzer import *
 import copy
+import pandas as pd
 import scanFrame as scan
 import Scanner as scanner
 import sys
+from tabulate import tabulate
 
 #Algoritmo Shunting Yard para pasar una expresión infix a postfix.
 
@@ -396,209 +398,6 @@ def getFinalRegex(yalexRegex, yalexFunctions):
                 else:
                     yalexRegex4.append(el)
     return yalexRegex4
-
-class YAParAttributes(object):
-    def __init__(self, tokens):
-        # Inicialización de las propiedades de la clase
-        self.yalexTokens = tokens
-        self.yaparTokens = []
-        self.yaparProductions = []
-        self.yaparSubproductions = []
-        self.yaparSubsets = []
-        self.yaparSubsets2 = []
-        self.subsetsIndex = []
-        self.yaparTransitions = []
-        self.subsetNumber = 0
-
-    def leer_archivo_yapar(self):
-        # Método para leer un archivo .yalp y extraer tokens y producciones
-        with open(yaparArchive4, "r") as yaparArchive:
-            content = yaparArchive.readlines()
-            if not content:
-                raise ValueError("El archivo .yalp está vacío.")
-        
-        # Verifica si el archivo no contiene bloques 'let' o 'rule'
-        if "%token" not in ''.join(content) or "%%" not in ''.join(content):
-            raise ValueError("El archivo .yalp no contiene bloques '%token' o '%%' para la declaración de producciones.")
-        
-        collect_token = True
-        production_name = None
-
-        for line in content:
-            if "%%" in line:
-                collect_token = False
-
-            if line.strip().startswith("%token"):
-                collect_token = True
-                tokens = line.split()
-                self.yaparTokens.extend(tokens[1:])
-
-            if line.strip().startswith("IGNORE"):
-                # Dividir la línea en palabras
-                tokens = line.split()
-                # Verificar si 'IGNORE' está seguido de un token
-                if len(tokens) >= 1:
-                    # Eliminar el token especificado después de 'IGNORE' de la lista de tokens
-                    if tokens[1] in self.yaparTokens:
-                        self.yaparTokens.remove(tokens[1])
-            
-            if collect_token == False:
-                # Si encontramos el nombre de la producción en la línea
-                if ":" in line:
-                    production_name = line.split(":")[0].strip()
-                    current_rules = line.split(":")[1].strip().rstrip(";").split("|")
-                    self.yaparProductions.extend([[production_name] + rule.strip().split() for rule in current_rules])
-                # Si la línea no contiene ':' ni ';', añadimos reglas a la producción actual
-                elif not line.strip().endswith(";"):
-                    current_rules = line.strip().split("|")
-                    self.yaparProductions.extend([[production_name] + rule.strip().split() for rule in current_rules])
-
-        # Limpiar producciones con production_name None o reglas vacías o reglas ''
-        self.yaparProductions = [[production_name, rules] for production_name, *rules in self.yaparProductions if production_name is not None and rules]
-
-        # Imprimir tokens y producciones
-        print("Estos son los tokens del yalp: ", self.yaparTokens)
-
-        # Verificar si las listas son diferentes después de la eliminación
-        if self.yalexTokens != self.yaparTokens:
-            raise ValueError("Las listas de tokens no coinciden.")
-
-        if len(self.yaparProductions) == 0:
-            raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
-
-        if len(self.yaparTokens) == 0:
-            raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
-        
-        print("Producciones:")
-        for production in self.yaparProductions:
-            print(production)
-
-    def yapar_subset_construction(self):
-        # Método para construir los subconjuntos LR(0)
-        initial_state_name = self.yaparProductions[0][0]
-        self.yaparProductions.insert(0, [initial_state_name + "'", [initial_state_name]])
-        
-        self.yaparSubproductions = copy.deepcopy(self.yaparProductions)
-
-        for production in self.yaparProductions:
-            production[1].insert(0, ".")
-
-        self.closure([self.yaparProductions[0]])
-
-        while self.yaparSubsets2:
-            self.goTo(self.yaparSubsets2.pop(0))
-        
-        newInitialState = self.yaparProductions[0][0]
-        for subset in self.yaparSubsets:
-            for item in subset:
-                acceptIndex = item[1].index(".")
-                if acceptIndex - 1 >= 0:
-                    if item[0] == newInitialState and item[1][acceptIndex - 1] == newInitialState[:-1]:
-                        final = self.yaparSubsets.index(subset)
-                        self.yaparTransitions.append([self.subsetsIndex[final], "$", "accept"])
-        
-        # Filtrar elementos que coincidan exactamente con [0, "$", "accept"]
-        self.yaparTransitions = [transition for transition in self.yaparTransitions if transition != [0, "$", "accept"]]
-        
-
-    def closure(self, yaparProductions, item=None, i=None):
-        # Método para realizar la operación de cierre (closure)
-        closureProductions = yaparProductions.copy()
-
-        while True:
-            prodLength = len(closureProductions)
-            for item in closureProductions:
-                dot = item[1].index(".")
-                if dot + 1 < len(item[1]):
-                    nextValue = item[1][dot + 1]
-                    newItems = [n for n in self.yaparProductions if n[0] == nextValue and n not in closureProductions]
-                    closureProductions.extend(newItems)
-            if prodLength == len(closureProductions):
-                break
-        
-        sortItems = sorted(closureProductions, key=lambda x: x[0])
-
-        if sortItems not in self.yaparSubsets:
-            self.yaparSubsets.append(sortItems)
-            self.subsetsIndex.append(self.subsetNumber)
-            self.subsetNumber += 1
-            self.yaparSubsets2.append(sortItems)
-        
-        if item is not None and i is not None:
-            start = self.yaparSubsets.index(i)
-            end = self.yaparSubsets.index(sortItems)
-            self.yaparTransitions.append([self.subsetsIndex[start], item, self.subsetsIndex[end]])
-    
-    def goTo(self, yaparSubsets2):
-        # Método para realizar la operación de ir a (goTo)
-        items = list(set(x[1][x[1].index(".") + 1] for x in yaparSubsets2 if x[1].index(".") + 1 < len(x[1])))
-
-        for item in items:
-            tempItems = [copy.deepcopy(y) for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
-
-            for item2 in tempItems:
-                dot = item2[1].index(".")
-                if dot + 1 < len(item2[1]):
-                    item2[1][dot], item2[1][dot + 1] = item2[1][dot + 1], item2[1][dot]
-        
-            self.closure(tempItems, item, yaparSubsets2)
-    
-    def create_graph(self, G, filename):
-        # Método para crear y renderizar un grafo con Graphviz
-        desc = (f'Automata LR[0] de {filename}')
-        graph = graphviz.Digraph(comment=desc)
-
-        graph.attr(labelloc="t", label=desc)
-
-        for node, attrs in G.nodes(data=True):
-            graph.node(str(node), label=str(attrs['label']).replace("'", "").replace('"', ''), fontsize="14", shape="rectangle")
-
-        for actual_state, target_state, attrs in G.edges(data=True):
-            graph.edge(str(actual_state), str(target_state), label=str(attrs['label']), fontsize="14")
-        
-        file = f'{filename}-LR[0]'
-
-        graph.render(f'./SLR/{file}', view=True, format="png")
-    
-    def build_graphviz_graph(self, filename):
-        # Método para construir el grafo en formato Graphviz
-        G = nx.DiGraph()
-
-        for index, subset in enumerate(self.yaparSubsets):
-            label = f"I{index}\n"
-            for item in subset:
-                label += str(item) + "\n"
-            G.add_node(index, label=label)
-        
-        for transition in self.yaparTransitions:
-            from_node, label, to_node = transition
-            G.add_edge(from_node, to_node, label=label)
-        
-        for node in G.nodes():
-            if 'label' not in G.nodes[node]:
-                G.nodes[node]['label'] = str(node)
-        
-        self.create_graph(G, filename)
-
-    def print_properties(self):
-        print("\n")
-        print("yalexTokens:", self.yalexTokens)
-        print("\n")
-        print("yaparTokens:", self.yaparTokens)
-        print("\n")
-        print("yaparProductions:", self.yaparProductions)
-        print("\n")
-        print("yaparSubproductions:", self.yaparSubproductions)
-        print("\n")
-        print("yaparSubsets:", self.yaparSubsets)
-        print("\n")
-        print("yaparSubsets2:", self.yaparSubsets2)
-        print("\n")
-        print("subsetsIndex:", self.subsetsIndex)
-        print("\n")
-        print("yaparTransitions:", self.yaparTransitions)
-        print("\n")
-        print("subsetNumber:", self.subsetNumber)
 
 #Algoritmo de Construcción Directa para convertir una regex en un AFD.
 
@@ -1193,6 +992,404 @@ def remove_unreachable_states(dfa):
     # Remover estados no alcanzables
     dfa.remove_nodes_from(unreachable_states)
 
+class YAParAttributes(object):
+    def __init__(self, tokens):
+        # Inicialización de las propiedades de la clase
+        self.yalexTokens = tokens
+        self.yaparTokens = []
+        self.yaparProductions = []
+        self.yaparSubproductions = []
+        self.yaparSubsets = []
+        self.yaparSubsets2 = []
+        self.subsetsIndex = []
+        self.yaparTransitions = []
+        self.subsetNumber = 0
+
+    def leer_archivo_yapar(self):
+        # Método para leer un archivo .yalp y extraer tokens y producciones
+        with open(yaparArchive4, "r") as yaparArchive:
+            content = yaparArchive.readlines()
+            if not content:
+                raise ValueError("El archivo .yalp está vacío.")
+        
+        # Verifica si el archivo no contiene bloques 'let' o 'rule'
+        if "%token" not in ''.join(content) or "%%" not in ''.join(content):
+            raise ValueError("El archivo .yalp no contiene bloques '%token' o '%%' para la declaración de producciones.")
+        
+        collect_token = True
+        production_name = None
+
+        for line in content:
+            if "%%" in line:
+                collect_token = False
+
+            if line.strip().startswith("%token"):
+                collect_token = True
+                tokens = line.split()
+                self.yaparTokens.extend(tokens[1:])
+
+            if line.strip().startswith("IGNORE"):
+                # Dividir la línea en palabras
+                tokens = line.split()
+                # Verificar si 'IGNORE' está seguido de un token
+                if len(tokens) >= 1:
+                    # Eliminar el token especificado después de 'IGNORE' de la lista de tokens
+                    if tokens[1] in self.yaparTokens:
+                        self.yaparTokens.remove(tokens[1])
+            
+            if collect_token == False:
+                # Si encontramos el nombre de la producción en la línea
+                if ":" in line:
+                    production_name = line.split(":")[0].strip()
+                    current_rules = line.split(":")[1].strip().rstrip(";").split("|")
+                    self.yaparProductions.extend([[production_name] + rule.strip().split() for rule in current_rules])
+                # Si la línea no contiene ':' ni ';', añadimos reglas a la producción actual
+                elif not line.strip().endswith(";"):
+                    current_rules = line.strip().split("|")
+                    self.yaparProductions.extend([[production_name] + rule.strip().split() for rule in current_rules])
+
+        # Limpiar producciones con production_name None o reglas vacías o reglas ''
+        self.yaparProductions = [[production_name, rules] for production_name, *rules in self.yaparProductions if production_name is not None and rules]
+
+        # Imprimir tokens y producciones
+        print("Estos son los tokens del yalp: ", self.yaparTokens)
+
+        # Verificar si las listas son diferentes después de la eliminación
+        if self.yalexTokens != self.yaparTokens:
+            raise ValueError("Las listas de tokens no coinciden.")
+
+        if len(self.yaparProductions) == 0:
+            raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
+
+        if len(self.yaparTokens) == 0:
+            raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
+        
+        print("Producciones:")
+        for production in self.yaparProductions:
+            print(production)
+
+    def yapar_subset_construction(self):
+        # Método para construir los subconjuntos LR(0)
+        initial_state_name = self.yaparProductions[0][0]
+        self.yaparProductions.insert(0, [initial_state_name + "'", [initial_state_name]])
+        
+        self.yaparSubproductions = copy.deepcopy(self.yaparProductions)
+
+        for production in self.yaparProductions:
+            production[1].insert(0, ".")
+
+        self.closure([self.yaparProductions[0]])
+
+        while self.yaparSubsets2:
+            self.goTo(self.yaparSubsets2.pop(0))
+        
+        newInitialState = self.yaparProductions[0][0]
+        for subset in self.yaparSubsets:
+            for item in subset:
+                acceptIndex = item[1].index(".")
+                if acceptIndex - 1 >= 0:
+                    if item[0] == newInitialState and item[1][acceptIndex - 1] == newInitialState[:-1]:
+                        final = self.yaparSubsets.index(subset)
+                        self.yaparTransitions.append([self.subsetsIndex[final], "$", "accept"])
+        
+        # Filtrar elementos que coincidan exactamente con [0, "$", "accept"]
+        self.yaparTransitions = [transition for transition in self.yaparTransitions if transition != [0, "$", "accept"]]
+        
+
+    def closure(self, yaparProductions, item=None, i=None):
+        # Método para realizar la operación de cierre (closure)
+        closureProductions = yaparProductions.copy()
+
+        while True:
+            prodLength = len(closureProductions)
+            for item in closureProductions:
+                dot = item[1].index(".")
+                if dot + 1 < len(item[1]):
+                    nextValue = item[1][dot + 1]
+                    newItems = [n for n in self.yaparProductions if n[0] == nextValue and n not in closureProductions]
+                    closureProductions.extend(newItems)
+            if prodLength == len(closureProductions):
+                break
+        
+        sortItems = sorted(closureProductions, key=lambda x: x[0])
+
+        if sortItems not in self.yaparSubsets:
+            self.yaparSubsets.append(sortItems)
+            self.subsetsIndex.append(self.subsetNumber)
+            self.subsetNumber += 1
+            self.yaparSubsets2.append(sortItems)
+        
+        if item is not None and i is not None:
+            print("Esto es el item para la transición: ", item[1])
+
+            dot_index = item[1].index('.')
+            # Determinar el elemento a añadir basado en la posición del '.'
+            if dot_index > 0:
+                element = item[1][dot_index - 1]
+            else:
+                element = item[1][dot_index + 1]
+            
+            element = element.upper()
+            
+            start = self.yaparSubsets.index(i)
+            end = self.yaparSubsets.index(sortItems)
+            self.yaparTransitions.append([self.subsetsIndex[start], element, self.subsetsIndex[end]])
+    
+    def goTo(self, yaparSubsets2):
+        # Método para realizar la operación de ir a (goTo)
+        items = list(set(x[1][x[1].index(".") + 1] for x in yaparSubsets2 if x[1].index(".") + 1 < len(x[1])))
+
+        for item in items:
+            tempItems = [copy.deepcopy(y) for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
+
+            for item2 in tempItems:
+                dot = item2[1].index(".")
+                if dot + 1 < len(item2[1]):
+                    item2[1][dot], item2[1][dot + 1] = item2[1][dot + 1], item2[1][dot]
+        
+            self.closure(tempItems, item, yaparSubsets2)
+    
+    def create_graph(self, G, filename):
+        # Método para crear y renderizar un grafo con Graphviz
+        desc = (f'Automata LR[0] de {filename}')
+        graph = graphviz.Digraph(comment=desc)
+
+        graph.attr(labelloc="t", label=desc)
+
+        for node, attrs in G.nodes(data=True):
+            graph.node(str(node), label=str(attrs['label']).replace("'", "").replace('"', ''), fontsize="14", shape="rectangle")
+
+        for actual_state, target_state, attrs in G.edges(data=True):
+            graph.edge(str(actual_state), str(target_state), label=str(attrs['label']), fontsize="14")
+        
+        file = f'{filename}-LR[0]'
+
+        graph.render(f'./SLR/{file}', view=True, format="png")
+    
+    def build_graphviz_graph(self, filename):
+        # Método para construir el grafo en formato Graphviz
+        G = nx.DiGraph()
+
+        for index, subset in enumerate(self.yaparSubsets):
+            label = f"I{index}\n"
+            for item in subset:
+                label += str(item) + "\n"
+            G.add_node(index, label=label)
+        
+        for transition in self.yaparTransitions:
+            from_node, label, to_node = transition
+            G.add_edge(from_node, to_node, label=label)
+        
+        for node in G.nodes():
+            if 'label' not in G.nodes[node]:
+                G.nodes[node]['label'] = str(node)
+        
+        self.create_graph(G, filename)
+
+    def print_properties(self):
+        print("\n")
+        print("yalexTokens:", self.yalexTokens)
+        print("\n")
+        print("yaparTokens:", self.yaparTokens)
+        print("\n")
+        print("yaparProductions:", self.yaparProductions)
+        print("\n")
+        print("yaparSubproductions:", self.yaparSubproductions)
+        print("\n")
+        print("yaparSubsets:", self.yaparSubsets)
+        print("\n")
+        print("yaparSubsets2:", self.yaparSubsets2)
+        print("\n")
+        print("subsetsIndex:", self.subsetsIndex)
+        print("\n")
+        print("yaparTransitions:", self.yaparTransitions)
+        print("\n")
+        print("subsetNumber:", self.subsetNumber)
+
+class YAParser(object):
+    def __init__(self, transitions, subsets, states, productions):
+        self.transitions = transitions
+        self.subsets = subsets
+        self.states = states
+        self.productions = productions
+        self.nonterminals = []
+        self.first = []
+        self.goto = []
+        self.gRows = []
+        self.action = []
+        self.aRows = []
+
+        for item in self.productions:
+            if item[0] not in self.nonterminals:
+                self.nonterminals.append(item[0])
+    
+    def build_parser_table(self):
+        first = self.productions[0][1][0]
+        self.gRows = sorted(list(set(x[1] for x in self.transitions if x[1].isupper())))
+        self.aRows = sorted(list(set(x[1] for x in self.transitions if not x[1].isupper())), reverse=True)
+
+        def findTransition(states, symbol):
+            return [(x[0], x[1], x[2]) for x in self.transitions if x[0] == states and x[1] == symbol]
+        
+        for state in self.states:
+            for symbol in self.gRows:
+                self.goto.extend(findTransition(state, symbol))
+            for symbol in self.aRows:
+                self.action.extend(findTransition(state, symbol))
+        
+        for production in self.productions:
+            firstProd = [production[0]]
+            for x in firstProd:
+                newFirstProd = [y[1][0] for y in self.productions if x == y[0] and y[1][0] not in firstProd]
+                firstProd.extend(newFirstProd)
+            
+            self.first.append([production[0], sorted(list(set(w for w in firstProd if w in self.aRows)))])
+        
+        for i, state in enumerate(self.subsets):
+            for item in state:
+                if item[1][-1] == ".":
+                    dotIndex = item[1].index(".")
+                    if item[1][dotIndex - 1] != first:
+                        transition2 = copy.deepcopy(item)
+                        transition2[1].remove(".")
+                        for j, production in enumerate(self.productions):
+                            if production == transition2:
+                                followingState = self.follow(transition2[0], first)
+                                self.action.extend([(i, w, "r" + str(j)) for w in followingState])
+        
+        #print("First: ", self.first)
+        #print("Go to: ", self.goto)
+        #print("Action: ", self.action)
+        #print("\n")
+    
+    def follow(self, state, accept):
+        accept += "'"
+        stateStruct = {state}
+        followingState = set()
+        
+        while True:
+            stateStruct2 = set()
+            for y in stateStruct:
+                for x in self.productions:
+                    if y in x[1]:
+                        index = x[1].index(y)
+                        if index == len(x[1]) - 1:
+                            stateStruct2.add(x[0])
+                        elif index+1 < len(x[1]) and x[1][index + 1] in self.nonterminals:
+                            valueFirst = [z[1] for z in self.first if z[0] == x[1][index + 1]]
+                            stateStruct2.update(valueFirst[0] if valueFirst else [])
+            
+            if len(stateStruct) == len(stateStruct | stateStruct2):
+                break
+
+            stateStruct |= stateStruct2
+        
+        for x in stateStruct:
+            for y in self.productions:
+                if x in y[1]:
+                    index = y[1].index(x)
+                    if index + 1 < len(y[1]) and y[1][index + 1] not in self.nonterminals:
+                        followingState.add(y[1][index + 1])
+        if accept in stateStruct:
+            followingState.add("$")
+        
+        followingState = list(followingState)
+
+        return followingState
+    
+    def create_parser_table(self):
+        columns = self.aRows + self.gRows
+        df = pd.DataFrame(columns=columns)
+
+        for row, column, value in self.goto + self.action:
+            if column in columns:
+                df.at[row, column] = value
+        
+        df.fillna('', inplace=True)
+
+        df.index.name = 'State'
+        tableHeader = ['Action'] * len(self.aRows) + ['Go to'] * len(self.gRows)
+        df.columns = pd.MultiIndex.from_tuples(zip(tableHeader, df.columns))
+
+        df.sort_index(inplace=True)
+
+        table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
+        print(table)
+    
+    def parser_table_simulation(self, testTokens):
+        stack = []
+        symbol = []
+        input = [x[0] for x in testTokens] + ["$"]
+        prevStack = []
+        prevSymbol = []
+        prevInput = []
+        action = []
+
+        symbol.append("$")
+        stack.append(0)
+
+        completed = False
+        notFinished = True
+
+        while notFinished:
+            topStack = stack[:-1]
+            topInput = input[0]
+
+            prevStack.append(copy.deepcopy(stack))
+            prevSymbol.append(copy.deepcopy(symbol))
+            prevInput.append(copy.deepcopy(input))
+
+            for production in self.action:
+                if topStack == production[0] and topInput == production[1]:
+                    notFinished = True
+                    if production[2][0] == "s":
+                        stack.append(int(production[2][1:]))
+                        symbol.append(input.pop(0))
+                        action.append(f"Shift -> {production[2][1:]}")
+                    elif production[2][0] == "r":
+                        index = int(production[2][1:])
+                        reduce = self.newProductions[index]
+                        action.append(f"Reduced -> {reduce[0]} -> {' '.join(reduce[1])}")
+                        removeStack = len(reduce[1])
+
+                        for _ in range(removeStack):
+                            stack.pop(-1)
+
+                        replace_indexes = [z for y in reduce[1] for z, elem in enumerate(reversed(symbol)) if y == elem]
+
+                        if len(replace_indexes) > 1:
+                            symbol[replace_indexes[0]:replace_indexes[-1] + 1] = reduce[0]
+                        else:
+                            symbol[replace_indexes[0]] = reduce[0]
+
+                        topStack = stack[-1]
+                        for transition in self.goto:
+                            if transition[0] == topStack and transition[1] == reduce[0]:
+                                stack.append(int(transition[2]))
+                    elif production[2] == "accept":
+                        action.append("accept")
+                        completed = True
+                        notFinished = False
+                    break
+                else:
+                    notFinished = False
+
+        if len(action) != len(prevStack):
+            action.append("Error")
+
+        if completed:
+            print("Accepted")
+        else:
+            print("Not accepted")
+
+        data = {'Stack': prevStack, 'Symbol': prevSymbol, 'Inputs': prevInput, 'Action': action}
+        df = pd.DataFrame(data)
+        df.index.name = 'Line'
+
+        table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
+        print(table)
+
+
 #Declaración de archivos Yalex proporcionados para el laboratorio.
 yalexArchive1 = "yalex/slr-1.yal"
 yalexArchive2 = "yalex/slr-2.yal"
@@ -1365,6 +1562,18 @@ if __name__ == "__main__":
         yapar.yapar_subset_construction()
         yapar.print_properties()
         yapar.build_graphviz_graph(yaparArchive4)
+
+        # Emparejar los valores de acuerdo a su índice en una nueva lista como una lista de tuplas
+        simulationTokensAndLexemes = list(zip(*inputScanner))
+
+        print("Lista para simular tokens y lexemas: \n", simulationTokensAndLexemes)
+
+        #Simulación de tabla de parseo.
+
+        tableParser = YAParser(yapar.yaparTransitions, yapar.yaparSubsets, yapar.subsetsIndex, yapar.yaparSubproductions)
+        tableParser.build_parser_table()
+        tableParser.create_parser_table()
+        tableParser.parser_table_simulation(simulationTokensAndLexemes)
 
     except Exception as e:
         print("Error: ", str(e))
