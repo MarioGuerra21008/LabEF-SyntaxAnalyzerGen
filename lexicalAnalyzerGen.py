@@ -1315,6 +1315,9 @@ class YAParser(object):
 
         table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
         print(table)
+
+        with open("./ParserTables/TableYal.txt", "w") as file:
+            file.write(table)
     
     def parser_table_simulation(self, testTokens):
         stack = []
@@ -1388,6 +1391,9 @@ class YAParser(object):
 
         table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
         print(table)
+
+        with open("./ParserTables/SimulationTableYal.txt", "w") as file:
+            file.write(table)
 
 
 #Declaración de archivos Yalex proporcionados para el laboratorio.
