@@ -1056,14 +1056,14 @@ class YAParAttributes(object):
         print("Estos son los tokens del yalp: ", self.yaparTokens)
 
         # Verificar si las listas son diferentes después de la eliminación
-        if self.yalexTokens != self.yaparTokens:
-            raise ValueError("Las listas de tokens no coinciden.")
+        #if self.yalexTokens != self.yaparTokens:
+            #raise ValueError("Las listas de tokens no coinciden.")
 
-        if len(self.yaparProductions) == 0:
-            raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
+        #if len(self.yaparProductions) == 0:
+            #raise ValueError("Error sintáctico: No hay producciones en el archivo yapar.")
 
-        if len(self.yaparTokens) == 0:
-            raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
+        #if len(self.yaparTokens) == 0:
+            #raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
         
         print("Producciones:")
         for production in self.yaparProductions:
@@ -1121,26 +1121,26 @@ class YAParAttributes(object):
             self.yaparSubsets2.append(sortItems)
 
         if item is not None and i is not None:
-            print("Esto es el item para la transición: ", item[1])
-            print("Esto es item[0]", item[0])
+            #print("Esto es el item para la transición: ", item[1])
+            #print("Esto es item[0]", item[0])
             dot_index = item[1].index('.')
             # Determinar el elemento a añadir basado en la posición del '.'
             if dot_index > 0:
                 element = item[1][dot_index - 1]
-                print(element)
+                #print(element)
                 self.cont += 1
-                print(self.cont)
+                #print(self.cont)
             else:
                 if item[1][dot_index + 1] == str(item[0]):
                     element = item[1][dot_index + 1]
-                    print(element)
+                    #print(element)
                     self.cont += 1
-                    print(self.cont)
+                    #print(self.cont)
                 else:
                     element = items[self.cont]
-                    print(element)
+                    #print(element)
                     self.cont += 1
-                    print(self.cont)
+                    #print(self.cont)
             
             element = element.upper()
             
@@ -1152,7 +1152,7 @@ class YAParAttributes(object):
     def goTo(self, yaparSubsets2):
         # Método para realizar la operación de ir a (goTo)
         items = list(set(x[1][x[1].index(".") + 1] for x in yaparSubsets2 if x[1].index(".") + 1 < len(x[1])))
-        print("Estos son los items: ", items)
+        #print("Estos son los items: ", items)
         for item in items:
             tempItems = [copy.deepcopy(y) for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
 
@@ -1251,14 +1251,14 @@ class YAParser(object):
                 self.goto.extend(findTransition(state, symbol))
             for symbol in self.aRows:
                 self.action.extend(findTransition(state, symbol))
-        
+
         for production in self.productions:
             firstProd = [production[0]]
             for x in firstProd:
                 newFirstProd = [y[1][0] for y in self.productions if x == y[0] and y[1][0] not in firstProd]
                 firstProd.extend(newFirstProd)
             
-            self.first.append([production[0], sorted(list(set(w for w in firstProd if w in self.aRows)))])
+            self.first.append([production[0], production[1]])
         
         for i, state in enumerate(self.subsets):
             for item in state:
@@ -1272,7 +1272,10 @@ class YAParser(object):
                                 followingState = self.follow(transition2[0], first)
                                 self.action.extend([(i, w, "r" + str(j)) for w in followingState])
         
-        print("First: ", self.first)
+        # Print first set
+        print("First Sets: ")
+        for first in self.first:
+            print(f"{first[0]}: {first[1]}")
         print("Go to: ", self.goto)
         print("Action: ", self.action)
         print("\n")
@@ -1310,15 +1313,27 @@ class YAParser(object):
         
         followingState = list(followingState)
 
+        # Print follow set
+        print(f"Follow({state}): {followingState}")
+
         return followingState
     
     def create_parser_table(self):
         columns = self.aRows + self.gRows
         df = pd.DataFrame(columns=columns)
+        conflicts = []
 
         for row, column, value in self.goto + self.action:
             if column in columns:
-                df.at[row, column] = value
+                if row not in df.index:
+                    df.loc[row] = [None] * len(columns)  # Inicializar la fila si no existe
+                if pd.notna(df.at[row, column]):
+                    # Handle shift-reduce conflict
+                    existing_value = df.at[row, column]
+                    df.at[row, column] = f"{existing_value}/{value}"
+                    conflicts.append((row, column, existing_value, value))
+                else:
+                    df.at[row, column] = value
         
         df.fillna('', inplace=True)
 
@@ -1327,6 +1342,17 @@ class YAParser(object):
         df.columns = pd.MultiIndex.from_tuples(zip(tableHeader, df.columns))
 
         df.sort_index(inplace=True)
+
+        if conflicts:
+            print("\nConflictos Shift-Reduce encontrados:")
+            for conflict in conflicts:
+                row, column, existing_value, new_value = conflict
+                print(f"Conflicto en estado {row}, símbolo '{column}': {existing_value} / {new_value}")
+        else:
+            print("\nNo se encontraron conflictos Shift-Reduce.")
+        
+        if conflicts:
+            raise ValueError("Terminando ejecución por conflicto shift-reduce.")
 
         table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
         print(table)
@@ -1356,7 +1382,8 @@ class YAParser(object):
             prevStack.append(copy.deepcopy(stack))
             prevSymbol.append(copy.deepcopy(symbol))
             prevInput.append(copy.deepcopy(input))
-
+            
+            action_found = False
             for production in self.action:
                 if topStack == production[0] and topInput == production[1]:
                     notFinished = True
@@ -1389,23 +1416,50 @@ class YAParser(object):
                         completed = True
                         notFinished = False
                     break
-                else:
-                    notFinished = False
+            
+            if not action_found:
+                notFinished = False
+                action.append("Error sintactico.")
 
         if len(action) != len(prevStack):
-            action.append("Error")
+            action.append("Error: Token inesperado (error léxico).")
+
+        for i, sequence in enumerate(prevInput):
+            for j, token in enumerate(sequence):
+                if token not in self.gRows and token not in self.aRows:
+                    prevInput[i][j] = "Error lexico"
 
         if completed:
             print("Accepted")
         else:
             print("Not accepted")
 
-        data = {'Stack': prevStack, 'Symbol': prevSymbol, 'Inputs': prevInput, 'Action': action}
+        # Expand each list element in prevInput to a separate row
+        expanded_prevInput = []
+        expanded_prevStack = []
+        expanded_prevSymbol = []
+        expanded_action = []
+
+        for i in range(len(prevInput)):
+            for j in range(len(prevInput[i])):
+                expanded_prevInput.append(prevInput[i][j])
+                expanded_prevStack.append(prevStack[i])
+                expanded_prevSymbol.append(prevSymbol[i])
+                if j == 0:
+                    expanded_action.append(action[i])
+                else:
+                    expanded_action.append("")
+
+        data = {'Stack': expanded_prevStack, 'Symbol': expanded_prevSymbol, 'Inputs': expanded_prevInput, 'Action': expanded_action}
         df = pd.DataFrame(data)
         df.index.name = 'Line'
 
         table = tabulate(df, headers='keys', tablefmt='pipe', showindex=True)
         print(table)
+
+        for token in input:
+            if token not in self.gRows and token not in self.aRows:
+                print("Error léxico: Token", token, "no pertenece al autómata.")
 
         with open("./ParserTables/SimulationTableYal.txt", "w") as file:
             file.write(table)
@@ -1581,7 +1635,7 @@ if __name__ == "__main__":
         yapar = YAParAttributes(regexIdentifiers)
         yapar.leer_archivo_yapar()
         yapar.yapar_subset_construction()
-        yapar.print_properties()
+        #yapar.print_properties()
         yapar.build_graphviz_graph(yaparArchive1)
 
         # Emparejar los valores de acuerdo a su índice en una nueva lista como una lista de tuplas

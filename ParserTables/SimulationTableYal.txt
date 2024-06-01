@@ -1,3 +1,51 @@
-|   Line | Stack   | Symbol   | Inputs                                                                                                                                                                                                                                                                                                                                                              | Action   |
-|-------:|:--------|:---------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------|
-|      0 | [0]     | ['$']    | ['ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'WS', 'LPAREN', 'ID', 'WS', 'ID', 'RPAREN', 'WS', 'WS', 'undefined', 'undefined', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'ID', 'WS', 'PLUS', 'TIMES', 'WS', 'undefined', 'WS', 'undefined', 'undefined', 'WS', 'undefined', 'WS', 'undefined', '$'] | Error    |
+|   Line | Stack   | Symbol   | Inputs       | Action            |
+|-------:|:--------|:---------|:-------------|:------------------|
+|      0 | [0]     | ['$']    | Error lexico | Error sintactico. |
+|      1 | [0]     | ['$']    | Error lexico |                   |
+|      2 | [0]     | ['$']    | Error lexico |                   |
+|      3 | [0]     | ['$']    | Error lexico |                   |
+|      4 | [0]     | ['$']    | Error lexico |                   |
+|      5 | [0]     | ['$']    | Error lexico |                   |
+|      6 | [0]     | ['$']    | Error lexico |                   |
+|      7 | [0]     | ['$']    | Error lexico |                   |
+|      8 | [0]     | ['$']    | Error lexico |                   |
+|      9 | [0]     | ['$']    | Error lexico |                   |
+|     10 | [0]     | ['$']    | Error lexico |                   |
+|     11 | [0]     | ['$']    | Error lexico |                   |
+|     12 | [0]     | ['$']    | Error lexico |                   |
+|     13 | [0]     | ['$']    | Error lexico |                   |
+|     14 | [0]     | ['$']    | Error lexico |                   |
+|     15 | [0]     | ['$']    | Error lexico |                   |
+|     16 | [0]     | ['$']    | Error lexico |                   |
+|     17 | [0]     | ['$']    | Error lexico |                   |
+|     18 | [0]     | ['$']    | Error lexico |                   |
+|     19 | [0]     | ['$']    | Error lexico |                   |
+|     20 | [0]     | ['$']    | Error lexico |                   |
+|     21 | [0]     | ['$']    | Error lexico |                   |
+|     22 | [0]     | ['$']    | Error lexico |                   |
+|     23 | [0]     | ['$']    | Error lexico |                   |
+|     24 | [0]     | ['$']    | Error lexico |                   |
+|     25 | [0]     | ['$']    | Error lexico |                   |
+|     26 | [0]     | ['$']    | Error lexico |                   |
+|     27 | [0]     | ['$']    | Error lexico |                   |
+|     28 | [0]     | ['$']    | Error lexico |                   |
+|     29 | [0]     | ['$']    | Error lexico |                   |
+|     30 | [0]     | ['$']    | Error lexico |                   |
+|     31 | [0]     | ['$']    | Error lexico |                   |
+|     32 | [0]     | ['$']    | Error lexico |                   |
+|     33 | [0]     | ['$']    | Error lexico |                   |
+|     34 | [0]     | ['$']    | Error lexico |                   |
+|     35 | [0]     | ['$']    | Error lexico |                   |
+|     36 | [0]     | ['$']    | Error lexico |                   |
+|     37 | [0]     | ['$']    | Error lexico |                   |
+|     38 | [0]     | ['$']    | Error lexico |                   |
+|     39 | [0]     | ['$']    | Error lexico |                   |
+|     40 | [0]     | ['$']    | Error lexico |                   |
+|     41 | [0]     | ['$']    | Error lexico |                   |
+|     42 | [0]     | ['$']    | Error lexico |                   |
+|     43 | [0]     | ['$']    | Error lexico |                   |
+|     44 | [0]     | ['$']    | Error lexico |                   |
+|     45 | [0]     | ['$']    | Error lexico |                   |
+|     46 | [0]     | ['$']    | Error lexico |                   |
+|     47 | [0]     | ['$']    | Error lexico |                   |
+|     48 | [0]     | ['$']    | $            |                   |
