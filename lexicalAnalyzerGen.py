@@ -1053,7 +1053,7 @@ class YAParAttributes(object):
         self.yaparProductions = [[production_name, rules] for production_name, *rules in self.yaparProductions if production_name is not None and rules]
 
         # Imprimir tokens y producciones
-        print("Estos son los tokens del yalp: ", self.yaparTokens)
+        #print("Estos son los tokens del yalp: ", self.yaparTokens)
 
         # Verificar si las listas son diferentes después de la eliminación
         #if self.yalexTokens != self.yaparTokens:
@@ -1065,9 +1065,9 @@ class YAParAttributes(object):
         #if len(self.yaparTokens) == 0:
             #raise ValueError("Error sintáctico: Ningún token de yalex coincide con los tokens yapar.")
         
-        print("Producciones:")
-        for production in self.yaparProductions:
-            print(production)
+        #print("Producciones:")
+        #for production in self.yaparProductions:
+            #print(production)
 
     def yapar_subset_construction(self):
         # Método para construir los subconjuntos LR(0)
@@ -1228,7 +1228,7 @@ class YAParser(object):
         self.states = states
         self.productions = productions
         self.nonterminals = []
-        self.first = []
+        self.first = {}
         self.goto = []
         self.gRows = []
         self.action = []
@@ -1237,6 +1237,7 @@ class YAParser(object):
         for item in self.productions:
             if item[0] not in self.nonterminals:
                 self.nonterminals.append(item[0])
+                self.first[item[0]] = set()
     
     def build_parser_table(self):
         first = self.productions[0][1][0]
@@ -1252,13 +1253,13 @@ class YAParser(object):
             for symbol in self.aRows:
                 self.action.extend(findTransition(state, symbol))
 
+        self.calculate_first_sets()
+
         for production in self.productions:
             firstProd = [production[0]]
             for x in firstProd:
                 newFirstProd = [y[1][0] for y in self.productions if x == y[0] and y[1][0] not in firstProd]
                 firstProd.extend(newFirstProd)
-            
-            self.first.append([production[0], production[1]])
         
         for i, state in enumerate(self.subsets):
             for item in state:
@@ -1272,13 +1273,36 @@ class YAParser(object):
                                 followingState = self.follow(transition2[0], first)
                                 self.action.extend([(i, w, "r" + str(j)) for w in followingState])
         
-        # Print first set
+        # Print first sets
         print("First Sets: ")
-        for first in self.first:
-            print(f"{first[0]}: {first[1]}")
+        for nonterminal in self.first:
+            print(f"{nonterminal}: {sorted(self.first[nonterminal])}")
         print("Go to: ", self.goto)
         print("Action: ", self.action)
         print("\n")
+    
+    def calculate_first_sets(self):
+        # Initialize FIRST sets for nonterminals
+        for nonterminal in self.nonterminals:
+            self.first[nonterminal] = set()
+
+        # Repeat until no more changes
+        while True:
+            updated = False
+            for lhs, rhs in self.productions:
+                initial_length = len(self.first[lhs])
+                # If the first symbol is a terminal, add it directly
+                if rhs[0] not in self.nonterminals:
+                    self.first[lhs].add(rhs[0])
+                else:
+                    # If the first symbol is a nonterminal, add its FIRST set to lhs
+                    self.first[lhs].update(self.first[rhs[0]])
+
+                if len(self.first[lhs]) > initial_length:
+                    updated = True
+
+            if not updated:
+                break
     
     def follow(self, state, accept):
         accept += "'"
@@ -1419,6 +1443,7 @@ class YAParser(object):
             
             if not action_found:
                 notFinished = False
+                print(f"Error sintáctico detectado, hay un token que no es aceptado por la gramática.")
                 action.append("Error sintactico.")
 
         if len(action) != len(prevStack):
@@ -1477,7 +1502,7 @@ yaparArchive3 = "yapar/slr-3.yalp"
 yaparArchive4 = "yapar/slr-4.yalp"
 
 if __name__ == "__main__":
-    try:
+    #try:
         regexList, regexIdentifiers, regexTokens = leer_archivo_yalex()
 
         # Iteramos sobre los identificadores y los dividimos si contienen un punto
@@ -1629,7 +1654,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Se ha producido un error: {e}")
 
-        print("Los tokens de este yalex son: ", regexIdentifiers)
+        #print("Los tokens de este yalex son: ", regexIdentifiers)
 
         #Creación de LR[0] para archivos yapar.
         yapar = YAParAttributes(regexIdentifiers)
@@ -1641,7 +1666,7 @@ if __name__ == "__main__":
         # Emparejar los valores de acuerdo a su índice en una nueva lista como una lista de tuplas
         simulationTokensAndLexemes = list(zip(*inputScanner))
 
-        print("Lista para simular tokens y lexemas: \n", simulationTokensAndLexemes)
+        #print("Lista para simular tokens y lexemas: \n", simulationTokensAndLexemes)
 
         #Simulación de tabla de parseo.
 
@@ -1650,6 +1675,6 @@ if __name__ == "__main__":
         tableParser.create_parser_table()
         tableParser.parser_table_simulation(simulationTokensAndLexemes)
 
-    except Exception as e:
-        print("Error: ", str(e))
-        sys.exit(1)
+    #except Exception as e:
+        #print("Error: ", str(e))
+        #sys.exit(1)
