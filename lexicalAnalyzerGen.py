@@ -105,7 +105,7 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     return output_queue
 
 def leer_archivo_yalex():
-    with open(yalexArchive4, "r") as yalexArchive:
+    with open(yalexArchive1, "r") as yalexArchive:
         content = yalexArchive.read()
         if not content:
             raise ValueError("El archivo .yal está vacío.")
@@ -1004,10 +1004,11 @@ class YAParAttributes(object):
         self.subsetsIndex = []
         self.yaparTransitions = []
         self.subsetNumber = 0
+        self.cont = 0
 
     def leer_archivo_yapar(self):
         # Método para leer un archivo .yalp y extraer tokens y producciones
-        with open(yaparArchive4, "r") as yaparArchive:
+        with open(yaparArchive1, "r") as yaparArchive:
             content = yaparArchive.readlines()
             if not content:
                 raise ValueError("El archivo .yalp está vacío.")
@@ -1096,7 +1097,7 @@ class YAParAttributes(object):
         self.yaparTransitions = [transition for transition in self.yaparTransitions if transition != [0, "$", "accept"]]
         
 
-    def closure(self, yaparProductions, item=None, i=None):
+    def closure(self, yaparProductions, item=None, i=None, items=None):
         # Método para realizar la operación de cierre (closure)
         closureProductions = yaparProductions.copy()
 
@@ -1118,27 +1119,40 @@ class YAParAttributes(object):
             self.subsetsIndex.append(self.subsetNumber)
             self.subsetNumber += 1
             self.yaparSubsets2.append(sortItems)
-        
+
         if item is not None and i is not None:
             print("Esto es el item para la transición: ", item[1])
-
+            print("Esto es item[0]", item[0])
             dot_index = item[1].index('.')
             # Determinar el elemento a añadir basado en la posición del '.'
             if dot_index > 0:
                 element = item[1][dot_index - 1]
+                print(element)
+                self.cont += 1
+                print(self.cont)
             else:
-                element = item[1][dot_index + 1]
+                if item[1][dot_index + 1] == str(item[0]):
+                    element = item[1][dot_index + 1]
+                    print(element)
+                    self.cont += 1
+                    print(self.cont)
+                else:
+                    element = items[self.cont]
+                    print(element)
+                    self.cont += 1
+                    print(self.cont)
             
             element = element.upper()
             
             start = self.yaparSubsets.index(i)
             end = self.yaparSubsets.index(sortItems)
             self.yaparTransitions.append([self.subsetsIndex[start], element, self.subsetsIndex[end]])
+
     
     def goTo(self, yaparSubsets2):
         # Método para realizar la operación de ir a (goTo)
         items = list(set(x[1][x[1].index(".") + 1] for x in yaparSubsets2 if x[1].index(".") + 1 < len(x[1])))
-
+        print("Estos son los items: ", items)
         for item in items:
             tempItems = [copy.deepcopy(y) for y in yaparSubsets2 if y[1].index(".") + 1 < len(y[1]) and y[1][y[1].index(".") + 1] == item]
 
@@ -1147,7 +1161,8 @@ class YAParAttributes(object):
                 if dot + 1 < len(item2[1]):
                     item2[1][dot], item2[1][dot + 1] = item2[1][dot + 1], item2[1][dot]
         
-            self.closure(tempItems, item, yaparSubsets2)
+            self.closure(tempItems, item, yaparSubsets2, items)
+        self.cont = 0
     
     def create_graph(self, G, filename):
         # Método para crear y renderizar un grafo con Graphviz
@@ -1257,10 +1272,10 @@ class YAParser(object):
                                 followingState = self.follow(transition2[0], first)
                                 self.action.extend([(i, w, "r" + str(j)) for w in followingState])
         
-        #print("First: ", self.first)
-        #print("Go to: ", self.goto)
-        #print("Action: ", self.action)
-        #print("\n")
+        print("First: ", self.first)
+        print("Go to: ", self.goto)
+        print("Action: ", self.action)
+        print("\n")
     
     def follow(self, state, accept):
         accept += "'"
@@ -1567,7 +1582,7 @@ if __name__ == "__main__":
         yapar.leer_archivo_yapar()
         yapar.yapar_subset_construction()
         yapar.print_properties()
-        yapar.build_graphviz_graph(yaparArchive4)
+        yapar.build_graphviz_graph(yaparArchive1)
 
         # Emparejar los valores de acuerdo a su índice en una nueva lista como una lista de tuplas
         simulationTokensAndLexemes = list(zip(*inputScanner))
