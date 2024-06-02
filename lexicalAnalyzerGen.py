@@ -1502,7 +1502,7 @@ yaparArchive3 = "yapar/slr-3.yalp"
 yaparArchive4 = "yapar/slr-4.yalp"
 
 if __name__ == "__main__":
-    #try:
+    try:
         regexList, regexIdentifiers, regexTokens = leer_archivo_yalex()
 
         # Iteramos sobre los identificadores y los dividimos si contienen un punto
@@ -1675,6 +1675,6 @@ if __name__ == "__main__":
         tableParser.create_parser_table()
         tableParser.parser_table_simulation(simulationTokensAndLexemes)
 
-    #except Exception as e:
-        #print("Error: ", str(e))
-        #sys.exit(1)
+    except Exception as e:
+        print("Error: ", str(e))
+        sys.exit(1)
